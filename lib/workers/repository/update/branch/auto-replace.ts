@@ -2,7 +2,7 @@
 import is from '@sindresorhus/is';
 import { WORKER_FILE_UPDATE_FAILED } from '../../../../constants/error-messages';
 import { logger } from '../../../../logger';
-import { get } from '../../../../modules/manager';
+import { extractPackageFile } from '../../../../modules/manager';
 import type { PackageDependency } from '../../../../modules/manager/types';
 import { writeLocalFile } from '../../../../util/fs';
 import { escapeRegExp, regEx } from '../../../../util/regex';
@@ -14,21 +14,13 @@ export async function confirmIfDepUpdated(
   upgrade: BranchUpgradeConfig,
   newContent: string
 ): Promise<boolean> {
-  const {
-    manager,
-    packageFile,
-    newValue,
-    newDigest,
-    depIndex,
-    currentDigest,
-    pinDigests,
-  } = upgrade;
-  const extractPackageFile = get(manager, 'extractPackageFile');
+  const { manager, packageFile, depIndex } = upgrade;
   let newUpgrade: PackageDependency;
   try {
-    const newExtract = await extractPackageFile!(
+    const newExtract = await extractPackageFile(
+      manager,
       newContent,
-      packageFile,
+      packageFile!,
       upgrade
     );
     // istanbul ignore if
@@ -41,6 +33,7 @@ export async function confirmIfDepUpdated(
   } catch (err) /* istanbul ignore next */ {
     logger.debug({ manager, packageFile, err }, 'Failed to parse newContent');
   }
+
   if (!newUpgrade!) {
     logger.debug(`No newUpgrade in ${packageFile!}`);
     return false;
@@ -61,29 +54,51 @@ export async function confirmIfDepUpdated(
     );
     return false;
   }
-  if (newValue && newUpgrade.currentValue !== newValue) {
+
+  if (upgrade.newName && upgrade.newName !== newUpgrade.depName) {
     logger.debug(
       {
         manager,
         packageFile,
-        expectedValue: newValue,
+        currentDepName: upgrade.depName,
+        newDepName: newUpgrade.depName,
+      },
+      'depName is not updated'
+    );
+    return false;
+  }
+
+  if (upgrade.newValue && upgrade.newValue !== newUpgrade.currentValue) {
+    logger.debug(
+      {
+        manager,
+        packageFile,
+        expectedValue: upgrade.newValue,
         foundValue: newUpgrade.currentValue,
       },
       'Value is not updated'
     );
     return false;
   }
-  if (!newDigest) {
-    return true;
+
+  if (
+    upgrade.newDigest &&
+    (upgrade.isPinDigest || upgrade.currentDigest) &&
+    upgrade.newDigest !== newUpgrade.currentDigest
+  ) {
+    logger.debug(
+      {
+        manager,
+        packageFile,
+        expectedValue: upgrade.newDigest,
+        foundValue: newUpgrade.currentDigest,
+      },
+      'Digest is not updated'
+    );
+    return false;
   }
-  if (newUpgrade.currentDigest === newDigest) {
-    return true;
-  }
-  if (!currentDigest && !pinDigests) {
-    return true;
-  }
-  // istanbul ignore next
-  return false;
+
+  return true;
 }
 
 function getDepsSignature(deps: PackageDependency[]): string {
@@ -96,9 +111,13 @@ export async function checkBranchDepsMatchBaseDeps(
   branchContent: string
 ): Promise<boolean> {
   const { baseDeps, manager, packageFile } = upgrade;
-  const extractPackageFile = get(manager, 'extractPackageFile');
   try {
-    const res = await extractPackageFile!(branchContent, packageFile, upgrade)!;
+    const res = await extractPackageFile(
+      manager,
+      branchContent,
+      packageFile!,
+      upgrade
+    )!;
     const branchDeps = res!.deps;
     return getDepsSignature(baseDeps!) === getDepsSignature(branchDeps);
   } catch (err) /* istanbul ignore next */ {
@@ -147,6 +166,7 @@ export async function doAutoReplace(
     currentValue,
     newValue,
     currentDigest,
+    currentDigestShort,
     newDigest,
     autoReplaceStringTemplate,
   } = upgrade;
@@ -163,7 +183,7 @@ export async function doAutoReplace(
     newName !== depName &&
     (is.undefined(upgrade.replaceString) ||
       !upgrade.replaceString?.includes(depName!));
-  const replaceString = upgrade.replaceString ?? currentValue;
+  const replaceString = upgrade.replaceString ?? currentValue ?? currentDigest;
   logger.trace({ depName, replaceString }, 'autoReplace replaceString');
   let searchIndex: number;
   if (replaceWithoutReplaceString) {
@@ -201,6 +221,11 @@ export async function doAutoReplace(
       if (currentDigest && newDigest) {
         newString = newString.replace(
           regEx(escapeRegExp(currentDigest), 'g'),
+          newDigest
+        );
+      } else if (currentDigestShort && newDigest) {
+        newString = newString.replace(
+          regEx(escapeRegExp(currentDigestShort), 'g'),
           newDigest
         );
       }

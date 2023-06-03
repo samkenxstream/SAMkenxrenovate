@@ -11,7 +11,7 @@ For example, if you think anything is unclear, or you think something needs to b
 You need the following dependencies for local development:
 
 - Git `>=2.33.0`
-- Node.js `>=18.12.0`
+- Node.js `^18.12.0 || >=20.0.0`
 - Yarn `^1.22.5`
 - C++ compiler
 
@@ -47,15 +47,21 @@ If you already installed a part, skip the corresponding step.
   PS C:\Windows\system32> yarn --version
   ```
 
-#### VS Code Remote Development
+#### VS Code Dev Containers
 
-If you are using [VS Code](https://code.visualstudio.com/) you can skip installing [the prerequisites](#prerequisites) and work in a [development container](https://code.visualstudio.com/docs/remote/containers) instead.
+If you are using [VS Code](https://code.visualstudio.com/) you can skip installing [the prerequisites](#prerequisites) and work in a [development container](https://code.visualstudio.com/docs/devcontainers/containers) instead.
 
 - Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and [check its system requirements](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers#system-requirements)
 - Open the repository folder in VS Code
 - Choose "Reopen in Container" via the command palette or the small button in the lower left corner
 
 The VS Code [integrated terminal](https://code.visualstudio.com/docs/editor/integrated-terminal) is now running in the container and can be used to run additional commands.
+
+To build inside the container:
+
+```shell
+yarn build
+```
 
 #### Local Docker
 
@@ -133,8 +139,8 @@ Refactor PRs should ideally not change or remove tests (adding tests is OK).
 
 ### Jest
 
-You can run just the Jest unit tests by running `yarn jest`.
-You can also run just a subset of the Jest tests using file matching, e.g. `yarn jest composer` or `yarn jest workers/repository/update/branch`.
+Run the Jest unit tests with the `yarn jest` command.
+You can also run a subset of the Jest tests using file matching, e.g. `yarn jest composer` or `yarn jest workers/repository/update/branch`.
 If you get a test failure due to a "snapshot" mismatch, and you are sure that you need to update the snapshot, then you can append `-u` to the end.
 e.g. `yarn jest composer -u` would update the saved snapshots for _all_ tests in `**/composer/**`.
 
@@ -195,7 +201,7 @@ Also create documentation for the option in the `docs/usage/configuration-option
 
 ### Chrome's inspect tool
 
-It's really easy to debug Renovate with the help of Chrome's inspect tool.
+You can debug Renovate with Chrome's inspect tool.
 Here's an example:
 
 1. Open `chrome://inspect` in Chrome, then select "Open dedicated DevTools for Node"
@@ -205,7 +211,7 @@ Here's an example:
 
 ### VS Code
 
-You can also debug with VS Code.
+You can also debug Renovate with VS Code.
 Here's an example:
 
 1. In the configuration file, e.g. `config.js` in the root directory of the project, add `token` with your Personal Access Token

@@ -15,8 +15,6 @@ export interface Config {
   owner: string;
   prList: Pr[];
   repository: string;
-  username: string;
-  userUuid: string;
   ignorePrAuthor: boolean;
 }
 
@@ -64,6 +62,7 @@ export interface RepoInfoBody {
   mainbranch: { name: string };
   has_issues: boolean;
   uuid: string;
+  full_name: string;
 }
 
 export interface PrResponse {

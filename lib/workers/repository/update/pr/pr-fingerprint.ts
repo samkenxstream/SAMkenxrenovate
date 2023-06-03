@@ -2,7 +2,6 @@
 // https://github.com/renovatebot/renovate/blob/3d85b6048d6a8c57887b64ed4929e2e02ea41aa0/lib/workers/repository/update/pr/index.ts#L294-L306
 
 import type { UpdateType, ValidationMessage } from '../../../../config/types';
-import { pkg } from '../../../../expose.cjs';
 import { logger } from '../../../../logger';
 import type { PrCache } from '../../../../util/cache/repository/types';
 import { getElapsedHours } from '../../../../util/date';
@@ -18,10 +17,7 @@ export interface FilteredBranchUpgradeConfig {
   repoName?: string;
 }
 
-export interface PrFingerprintConfig {
-  // Renovate Version
-  pkgVersion: string;
-
+export interface PrBodyFingerprintConfig {
   // BranchConfig - filtered
   automerge?: boolean;
   automergeSchedule?: string[];
@@ -43,12 +39,15 @@ export interface PrFingerprintConfig {
   filteredUpgrades?: FilteredBranchUpgradeConfig[];
 }
 
-export function generatePrFingerprintConfig(
+export function generatePrBodyFingerprintConfig(
   config: BranchConfig
-): PrFingerprintConfig {
+): PrBodyFingerprintConfig {
   const filteredUpgrades = config.upgrades.map((upgrade) => {
     return {
       depName: upgrade.depName,
+      displayFrom: upgrade.displayFrom,
+      displayTo: upgrade.displayTo,
+      displayPending: upgrade.displayPending,
       gitRef: upgrade.gitRef,
       hasReleaseNotes: upgrade.hasReleaseNotes,
       prBodyDefinitions: upgrade.prBodyDefinitions,
@@ -63,7 +62,6 @@ export function generatePrFingerprintConfig(
     filteredUpgrades,
     hasReleaseNotes: config.hasReleaseNotes,
     isPin: config.isPin,
-    pkgVersion: pkg.version,
     prBodyTemplate: config.prBodyTemplate,
     prFooter: config.prFooter,
     prHeader: config.prHeader,
@@ -81,9 +79,9 @@ export function generatePrFingerprintConfig(
 
 export function validatePrCache(
   prCache: PrCache,
-  prFingerprint: string
+  bodyFingerprint: string
 ): boolean {
-  if (prCache.fingerprint !== prFingerprint) {
+  if (prCache.bodyFingerprint !== bodyFingerprint) {
     logger.debug('PR fingerprints mismatch, processing PR');
     return false;
   }

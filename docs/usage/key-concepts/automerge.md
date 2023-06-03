@@ -18,7 +18,7 @@ Renovate's approach is to ensure that automerging branches are up-to-date with t
 This means merging multiple branches in a row won't work reliably, so we prefer not to do that.
 What all this means is that Renovate will only automerge at most one branch/PR per target branch per run, before you need to wait for the next run.
 
-As a general guide, we recommend that you enable automerge for any type of dependency updates where you would just select "merge" anyway.
+As a general guide, we recommend that you enable automerge for any type of dependency updates where you would select "merge" anyway.
 For any updates where you want to review the release notes - or code - before you merge, you can keep automerge disabled.
 
 Automerge works particularly well for `devDependencies` as well as for production `dependencies` in projects which have great test coverage.
@@ -82,6 +82,22 @@ Non-major updates in SemVer ecosystems shouldn't have breaking changes (if they 
 
 The `matchCurrentVersion` setting above is a rule to exclude any dependencies which are pre-1.0.0 because those can make breaking changes at _any_ time according to the SemVer spec.
 
+### Automerge monorepo PRs
+
+Say you want to automerge `patch` and `minor` updates for packages in the `group:ionic-nativeMonorepo` preset:
+
+```json
+{
+  "packageRules": [
+    {
+      "extends": ["monorepo:ionic-native"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    }
+  ]
+}
+```
+
 ### Faster merges with platform-native automerge
 
 You can speed up merges by letting Renovate use your platform's native automerge.
@@ -101,7 +117,7 @@ For example:
 }
 ```
 
-For more information read [`platformAutomerge`](https://docs.renovatebot.com/configuration-options/#platformautomerge).
+For more information read [`platformAutomerge`](../configuration-options.md#platformautomerge).
 
 ### GitHub Merge Queue
 
